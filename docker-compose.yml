@@ -1,0 +1,23 @@
+services:
+  chat-server:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: chat-server
+    ports:
+      - "8080:8080"
+    depends_on:
+      - nats
+    environment:
+      - NATS_URL=nats://nats:4222
+    restart: always
+
+  nats:
+    image: nats:latest
+    container_name: nats-server
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+      - "6222:6222"
+    command: ["-js"]
+    restart: always
