@@ -1,9 +1,7 @@
 package domain
 
-type Chatroom struct {
-	Name string
-}
-
-func NewChatroom(name string) *Chatroom {
-	return &Chatroom{Name: name}
+type Message struct {
+	Username string `json:"username"`
+	Chatroom string `json:"chatroom"`
+	Content  string `json:"content"`
 }
