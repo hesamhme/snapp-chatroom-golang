@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"strings"
 	"appchat/internal/domain"
 )
 
-
+type UserInput struct {
+	Username string
+	Chatroom string
+}
 
 func StartCLI(serverAddress string) {
 	conn, err := net.Dial("tcp", serverAddress)
@@ -20,40 +22,50 @@ func StartCLI(serverAddress string) {
 	}
 	defer conn.Close()
 
-	reader := bufio.NewReader(os.Stdin)
+	userInput := collectUserInput()
 
-	fmt.Println("Welcome to the Chatroom!")
-	fmt.Print("Enter your username: ")
-	username, _ := reader.ReadString('\n')
-	username = strings.TrimSpace(username)
-
-	fmt.Print("Enter chatroom name: ")
-	chatroom, _ := reader.ReadString('\n')
-	chatroom = strings.TrimSpace(chatroom)
-
-	// Join the chatroom
-	joinMsg := domain.Message{Username: username, Chatroom: chatroom, Content: "has joined the chatroom"}
+	joinMsg := domain.Message{
+		Username: userInput.Username,
+		Chatroom: userInput.Chatroom,
+		Content:  "has joined the chatroom",
+	}
 	if err := sendMessage(conn, joinMsg); err != nil {
 		fmt.Println("Error sending join message:", err)
 		return
 	}
 
-	// Start listening for messages
 	go listenForMessages(conn)
 
+	sendUserMessages(conn, userInput)
+}
+
+func collectUserInput() UserInput {
+	var userInput UserInput
+	fmt.Print("Enter your username: ")
+	fmt.Scanln(&userInput.Username)
+	fmt.Print("Enter chatroom name: ")
+	fmt.Scanln(&userInput.Chatroom)
+	return userInput
+}
+
+func sendUserMessages(conn net.Conn, userInput UserInput) {
+	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Print("Enter message: ")
-		message, _ := reader.ReadString('\n')
-		message = strings.TrimSpace(message)
-
-		if message == "exit" {
-			break
-		}
-
-		msg := domain.Message{Username: username, Chatroom: chatroom, Content: message}
-		if err := sendMessage(conn, msg); err != nil {
-			fmt.Println("Error sending message:", err)
-			break
+		if scanner.Scan() {
+			message := scanner.Text()
+			if message == "exit" {
+				break
+			}
+			msg := domain.Message{
+				Username: userInput.Username,
+				Chatroom: userInput.Chatroom,
+				Content:  message,
+			}
+			if err := sendMessage(conn, msg); err != nil {
+				fmt.Println("Error sending message:", err)
+				break
+			}
 		}
 	}
 }
