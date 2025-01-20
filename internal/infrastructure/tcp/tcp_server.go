@@ -5,9 +5,10 @@ import (
 	"appchat/internal/infrastructure/nats"
 	"bufio"
 	"encoding/json"
-	"fmt"
 	"net"
 	"sync"
+
+	"github.com/sirupsen/logrus"
 )
 
 type TCPHandler struct {
@@ -26,21 +27,21 @@ func NewTCPHandler(natsClient *nats.NATSClient) *TCPHandler {
 func (th *TCPHandler) Start(port string) {
 	listener, err := net.Listen("tcp", ":"+port)
 	if err != nil {
-		fmt.Println("Error starting TCP handler:", err)
-		return
+		logrus.Fatalf("Error starting TCP handler: %v", err)
 	}
 	defer listener.Close()
 
-	fmt.Println("TCP handler started on port", port)
+	logrus.Infof("TCP handler started on port %s", port)
 
 	go th.subscribeToNATS()
 
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			fmt.Println("Error accepting connection:", err)
+			logrus.Errorf("Error accepting connection: %v", err)
 			continue
 		}
+		logrus.Infof("New client connected: %s", conn.RemoteAddr())
 		go th.handleConnection(conn)
 	}
 }
@@ -51,21 +52,23 @@ func (th *TCPHandler) handleConnection(conn net.Conn) {
 
 	if scanner.Scan() {
 		if err := json.Unmarshal(scanner.Bytes(), &msg); err != nil {
-			fmt.Println("Error decoding message:", err)
+			logrus.Errorf("Error decoding message: %v", err)
 			return
 		}
 		th.lock.Lock()
 		th.clients[msg.Chatroom] = append(th.clients[msg.Chatroom], conn)
 		th.lock.Unlock()
 
+		logrus.Infof("User %s joined chatroom %s", msg.Username, msg.Chatroom)
 		th.natsClient.PublishMessage("chatroom."+msg.Chatroom, string(scanner.Bytes()))
 	}
 
 	for scanner.Scan() {
 		if err := json.Unmarshal(scanner.Bytes(), &msg); err != nil {
-			fmt.Println("Error decoding message:", err)
+			logrus.Errorf("Error decoding message: %v", err)
 			continue
 		}
+		logrus.Infof("Received message from %s: %s", msg.Username, msg.Content)
 		th.natsClient.PublishMessage("chatroom."+msg.Chatroom, string(scanner.Bytes()))
 	}
 	conn.Close()
@@ -79,10 +82,11 @@ func (th *TCPHandler) subscribeToNATS() {
 			for _, conn := range th.clients[incomingMsg.Chatroom] {
 				_, err := conn.Write(append([]byte(msg), '\n'))
 				if err != nil {
-					fmt.Println("Error sending message to client:", err)
+					logrus.Errorf("Error sending message to client: %v", err)
 				}
 			}
 			th.lock.Unlock()
+			logrus.Infof("Broadcasting message to chatroom %s: %s", incomingMsg.Chatroom, incomingMsg.Content)
 		}
 	})
 }

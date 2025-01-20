@@ -1,0 +1,21 @@
+{"level":"info","msg":"Application starting...","time":"2025-01-21T02:28:12+03:30"}
+{"level":"info","msg":"Starting TCP handler on port 8080...","time":"2025-01-21T02:28:12+03:30"}
+{"level":"info","msg":"TCP handler started on port 8080","time":"2025-01-21T02:28:12+03:30"}
+{"level":"info","msg":"Application starting...","time":"2025-01-21T02:28:56+03:30"}
+{"level":"info","msg":"Starting chat client...","time":"2025-01-21T02:28:56+03:30"}
+{"level":"info","msg":"New client connected: 127.0.0.1:42510","time":"2025-01-21T02:28:56+03:30"}
+{"level":"info","msg":"User hesam joined chatroom x","time":"2025-01-21T02:29:01+03:30"}
+{"level":"info","msg":"Broadcasting message to chatroom x: has joined the chatroom","time":"2025-01-21T02:29:01+03:30"}
+{"level":"info","msg":"Received message from hesam: hi","time":"2025-01-21T02:29:07+03:30"}
+{"level":"info","msg":"Broadcasting message to chatroom x: hi","time":"2025-01-21T02:29:07+03:30"}
+{"level":"info","msg":"Application starting...","time":"2025-01-21T02:29:13+03:30"}
+{"level":"info","msg":"Starting chat client...","time":"2025-01-21T02:29:13+03:30"}
+{"level":"info","msg":"New client connected: 127.0.0.1:40772","time":"2025-01-21T02:29:13+03:30"}
+{"level":"info","msg":"User ali joined chatroom x","time":"2025-01-21T02:29:17+03:30"}
+{"level":"info","msg":"Broadcasting message to chatroom x: has joined the chatroom","time":"2025-01-21T02:29:17+03:30"}
+{"level":"info","msg":"Received message from ali: holla","time":"2025-01-21T02:29:22+03:30"}
+{"level":"info","msg":"Broadcasting message to chatroom x: holla","time":"2025-01-21T02:29:22+03:30"}
+{"level":"info","msg":"Received message from ali: hi hesam","time":"2025-01-21T02:29:29+03:30"}
+{"level":"info","msg":"Broadcasting message to chatroom x: hi hesam","time":"2025-01-21T02:29:29+03:30"}
+{"level":"info","msg":"Received message from hesam: hi ali","time":"2025-01-21T02:29:35+03:30"}
+{"level":"info","msg":"Broadcasting message to chatroom x: hi ali","time":"2025-01-21T02:29:35+03:30"}
