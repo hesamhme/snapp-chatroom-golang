@@ -2,6 +2,7 @@ package main
 
 import (
 	"appchat/internal/infrastructure/nats"
+	"appchat/internal/infrastructure/redis"
 	"appchat/internal/infrastructure/tcp"
 	"appchat/internal/interfaces/cli"
 	"os"
@@ -36,7 +37,9 @@ func main() {
 	}
 	defer natsClient.Close()
 
+	redisClient := redis.NewRedisClient()
+
 	logrus.Info("Starting TCP handler on port 8080...")
-	tcpHandler := tcp.NewTCPHandler(natsClient)
+	tcpHandler := tcp.NewTCPHandler(natsClient, redisClient)
 	tcpHandler.Start("8080")
 }
