@@ -1,12 +1,13 @@
 package cli
 
 import (
+	"appchat/internal/domain"
 	"bufio"
 	"encoding/json"
 	"fmt"
 	"net"
 	"os"
-	"appchat/internal/domain"
+	"strings"
 )
 
 type UserInput struct {
@@ -82,9 +83,14 @@ func sendMessage(conn net.Conn, msg domain.Message) error {
 func listenForMessages(conn net.Conn) {
 	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {
-		var msg domain.Message
-		if err := json.Unmarshal(scanner.Bytes(), &msg); err == nil {
-			fmt.Printf("[%s] %s: %s\n", msg.Chatroom, msg.Username, msg.Content)
+		msg := scanner.Text()
+		if strings.HasPrefix(msg, "Users in chatroom") {
+			fmt.Println(msg) 
+		} else {
+			var chatMsg domain.Message
+			if err := json.Unmarshal([]byte(msg), &chatMsg); err == nil {
+				fmt.Printf("[%s] %s: %s\n", chatMsg.Chatroom, chatMsg.Username, chatMsg.Content)
+			}
 		}
 	}
 }
