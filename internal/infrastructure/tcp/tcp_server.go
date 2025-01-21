@@ -1,25 +1,28 @@
 package tcp
 
 import (
-	"appchat/internal/domain"
-	"appchat/internal/infrastructure/nats"
 	"bufio"
 	"encoding/json"
+	"fmt"
 	"net"
 	"sync"
-
+	"appchat/internal/domain"
+	"appchat/internal/infrastructure/nats"
+	"appchat/internal/infrastructure/redis"
 	"github.com/sirupsen/logrus"
 )
 
 type TCPHandler struct {
 	natsClient *nats.NATSClient
+	redisClient *redis.RedisClient
 	clients    map[string][]net.Conn
 	lock       sync.Mutex
 }
 
-func NewTCPHandler(natsClient *nats.NATSClient) *TCPHandler {
+func NewTCPHandler(natsClient *nats.NATSClient, redisClient *redis.RedisClient) *TCPHandler {
 	return &TCPHandler{
 		natsClient: natsClient,
+		redisClient: redisClient,
 		clients:    make(map[string][]net.Conn),
 	}
 }
@@ -59,6 +62,11 @@ func (th *TCPHandler) handleConnection(conn net.Conn) {
 		th.clients[msg.Chatroom] = append(th.clients[msg.Chatroom], conn)
 		th.lock.Unlock()
 
+		logrus.Infof("Adding user %s to chatroom %s", msg.Username, msg.Chatroom)
+		if err := th.redisClient.AddUserToChatroom(msg.Chatroom, msg.Username); err != nil {
+			logrus.Errorf("Failed to add user to Redis: %v", err)
+		}
+
 		logrus.Infof("User %s joined chatroom %s", msg.Username, msg.Chatroom)
 		th.natsClient.PublishMessage("chatroom."+msg.Chatroom, string(scanner.Bytes()))
 	}
@@ -68,8 +76,21 @@ func (th *TCPHandler) handleConnection(conn net.Conn) {
 			logrus.Errorf("Error decoding message: %v", err)
 			continue
 		}
-		logrus.Infof("Received message from %s: %s", msg.Username, msg.Content)
-		th.natsClient.PublishMessage("chatroom."+msg.Chatroom, string(scanner.Bytes()))
+
+		if msg.Content == "#users" {
+			users, err := th.redisClient.GetUsersInChatroom(msg.Chatroom)
+			if err != nil {
+				logrus.Errorf("Error retrieving users from chatroom %s: %v", msg.Chatroom, err)
+				conn.Write([]byte("Error retrieving users\n"))
+				continue
+			}
+			userList := fmt.Sprintf("Users in chatroom %s: %v", msg.Chatroom, users)
+			logrus.Infof("Sending user list to %s: %s", msg.Username, userList)
+			conn.Write([]byte(userList + "\n"))
+		} else {
+			logrus.Infof("Received message from %s: %s", msg.Username, msg.Content)
+			th.natsClient.PublishMessage("chatroom."+msg.Chatroom, string(scanner.Bytes()))
+		}
 	}
 	conn.Close()
 }
