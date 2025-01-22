@@ -53,7 +53,6 @@ func collectUserInput() UserInput {
 func sendUserMessages(conn net.Conn, userInput UserInput) {
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
-		fmt.Print("Enter message: ")
 		if scanner.Scan() {
 			message := scanner.Text()
 			if message == "#exit" {

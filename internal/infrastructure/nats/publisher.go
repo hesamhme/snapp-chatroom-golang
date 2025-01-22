@@ -16,9 +16,10 @@ func NewNATSConnection(url string) (*NATSClient, error) {
 	return &NATSClient{conn: conn}, nil
 }
 
-func (nc *NATSClient) PublishMessage(subject, message string) {
-	nc.conn.Publish(subject, []byte(message))
+func (nc *NATSClient) PublishMessage(subject, message string) error {
+    return nc.conn.Publish(subject, []byte(message))
 }
+
 
 func (nc *NATSClient) Subscribe(subject string, handler func(string)) {
 	nc.conn.Subscribe(subject, func(m *nats.Msg) {

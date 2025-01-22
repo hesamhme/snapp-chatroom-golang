@@ -1,9 +1,8 @@
 package tcp
 
 import (
+	"appchat/internal/application"
 	"appchat/internal/domain"
-	"appchat/internal/infrastructure/nats"
-	"appchat/internal/infrastructure/redis"
 	"bufio"
 	"encoding/json"
 	"fmt"
@@ -14,17 +13,15 @@ import (
 )
 
 type TCPHandler struct {
-	natsClient  *nats.NATSClient
-	redisClient *redis.RedisClient
-	clients     map[string][]net.Conn
-	lock        sync.Mutex
+	useCase *application.ChatroomUseCase
+	clients map[string][]net.Conn
+	lock    sync.Mutex
 }
 
-func NewTCPHandler(natsClient *nats.NATSClient, redisClient *redis.RedisClient) *TCPHandler {
+func NewTCPHandler(useCase *application.ChatroomUseCase) *TCPHandler {
 	return &TCPHandler{
-		natsClient:  natsClient,
-		redisClient: redisClient,
-		clients:     make(map[string][]net.Conn),
+		useCase: useCase,
+		clients: make(map[string][]net.Conn),
 	}
 }
 
@@ -36,8 +33,6 @@ func (th *TCPHandler) Start(port string) {
 	defer listener.Close()
 
 	logrus.Infof("TCP handler started on port %s", port)
-
-	go th.subscribeToNATS()
 
 	for {
 		conn, err := listener.Accept()
@@ -76,62 +71,18 @@ func (th *TCPHandler) registerClient(conn net.Conn, msg domain.Message) {
 	th.lock.Lock()
 	defer th.lock.Unlock()
 	th.clients[msg.Chatroom] = append(th.clients[msg.Chatroom], conn)
-	th.redisClient.AddUserToChatroom(msg.Chatroom, msg.Username)
-	th.redisClient.AddChatroom(msg.Chatroom)
-	logrus.Infof("User %s joined chatroom %s", msg.Username, msg.Chatroom)
-	th.natsClient.PublishMessage("chatroom."+msg.Chatroom, msg.Content)
+	th.useCase.JoinChatroom(msg.Username, msg.Chatroom)
 }
 
 func (th *TCPHandler) processMessage(conn net.Conn, msg domain.Message) {
 	switch msg.Content {
 	case "#users":
-		th.sendUserList(conn, msg)
+		users, _ := th.useCase.GetUsers(msg.Chatroom)
+		conn.Write([]byte(fmt.Sprintf("Users in chatroom %s: %v\n", msg.Chatroom, users)))
 	case "#rooms":
-		th.sendRoomList(conn, msg)
+		rooms, _ := th.useCase.GetChatrooms()
+		conn.Write([]byte(fmt.Sprintf("Active chatrooms: %v\n", rooms)))
 	default:
-		logrus.Infof("Received message from %s: %s", msg.Username, msg.Content)
-		th.natsClient.PublishMessage("chatroom."+msg.Chatroom, string(encodeMessage(msg)))
+		th.useCase.SendMessage(msg.Username, msg.Chatroom, msg.Content)
 	}
-}
-
-func (th *TCPHandler) sendUserList(conn net.Conn, msg domain.Message) {
-	users, err := th.redisClient.GetUsersInChatroom(msg.Chatroom)
-	if err != nil {
-		conn.Write([]byte("Error retrieving users\n"))
-		return
-	}
-	response := fmt.Sprintf("Users in chatroom %s: %v", msg.Chatroom, users)
-	conn.Write([]byte(response + "\n"))
-}
-
-func (th *TCPHandler) sendRoomList(conn net.Conn, msg domain.Message) {
-	chatrooms, err := th.redisClient.GetChatrooms()
-	if err != nil {
-		conn.Write([]byte("Error retrieving chatrooms\n"))
-		return
-	}
-	response := fmt.Sprintf("Active chatrooms: %v", chatrooms)
-	conn.Write([]byte(response + "\n"))
-}
-
-func (th *TCPHandler) subscribeToNATS() {
-	th.natsClient.Subscribe("chatroom.*", func(msg string) {
-		var incomingMsg domain.Message
-		if err := json.Unmarshal([]byte(msg), &incomingMsg); err == nil {
-			th.lock.Lock()
-			for _, conn := range th.clients[incomingMsg.Chatroom] {
-				_, err := conn.Write(append([]byte(msg), '\n'))
-				if err != nil {
-					logrus.Errorf("Error sending message to client: %v", err)
-				}
-			}
-			th.lock.Unlock()
-			logrus.Infof("Broadcasting message to chatroom %s: %s", incomingMsg.Chatroom, incomingMsg.Content)
-		}
-	})
-}
-
-func encodeMessage(msg domain.Message) []byte {
-	data, _ := json.Marshal(msg)
-	return data
 }
