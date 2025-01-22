@@ -49,3 +49,15 @@ func (r *RedisClient) RemoveUserFromChatroom(chatroom, username string) error {
 	key := fmt.Sprintf("chatroom:%s:users", chatroom)
 	return r.client.SRem(ctx, key, username).Err()
 }
+
+func (r *RedisClient) AddChatroom(chatroom string) error {
+    return r.client.SAdd(ctx, "active_chatrooms", chatroom).Err()
+}
+
+func (r *RedisClient) GetChatrooms() ([]string, error) {
+    return r.client.SMembers(ctx, "active_chatrooms").Result()
+}
+
+func (r *RedisClient) RemoveChatroom(chatroom string) error {
+    return r.client.SRem(ctx, "active_chatrooms", chatroom).Err()
+}
