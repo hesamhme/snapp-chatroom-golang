@@ -26,6 +26,7 @@ func StartCLI(serverAddress string) {
 	userInput := collectUserInput()
 
 	joinMsg := domain.Message{
+		Type:     domain.CommandMessageType,
 		Username: userInput.Username,
 		Chatroom: userInput.Chatroom,
 		Content:  "has joined the chatroom",
@@ -55,14 +56,29 @@ func sendUserMessages(conn net.Conn, userInput UserInput) {
 		fmt.Print("Enter message: ")
 		if scanner.Scan() {
 			message := scanner.Text()
-			if message == "exit" {
+			if message == "#exit" {
+				exitMsg := domain.Message{
+					Type:     domain.CommandMessageType,
+					Username: userInput.Username,
+					Chatroom: userInput.Chatroom,
+					Content:  "has left the chatroom",
+				}
+				sendMessage(conn, exitMsg)
 				break
 			}
+
+			msgType := domain.ChatMessageType
+			if message == "#rooms" || message == "#users" {
+				msgType = domain.CommandMessageType
+			}
+
 			msg := domain.Message{
+				Type:     msgType,
 				Username: userInput.Username,
 				Chatroom: userInput.Chatroom,
 				Content:  message,
 			}
+
 			if err := sendMessage(conn, msg); err != nil {
 				fmt.Println("Error sending message:", err)
 				break
@@ -84,8 +100,8 @@ func listenForMessages(conn net.Conn) {
 	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {
 		msg := scanner.Text()
-		if strings.HasPrefix(msg, "Users in chatroom") {
-			fmt.Println(msg) 
+		if strings.HasPrefix(msg, "Users in chatroom") || strings.HasPrefix(msg, "Active chatrooms") {
+			fmt.Println(msg)
 		} else {
 			var chatMsg domain.Message
 			if err := json.Unmarshal([]byte(msg), &chatMsg); err == nil {

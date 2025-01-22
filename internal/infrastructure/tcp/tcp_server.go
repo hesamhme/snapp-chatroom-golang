@@ -1,29 +1,30 @@
 package tcp
 
 import (
+	"appchat/internal/domain"
+	"appchat/internal/infrastructure/nats"
+	"appchat/internal/infrastructure/redis"
 	"bufio"
 	"encoding/json"
 	"fmt"
 	"net"
 	"sync"
-	"appchat/internal/domain"
-	"appchat/internal/infrastructure/nats"
-	"appchat/internal/infrastructure/redis"
+
 	"github.com/sirupsen/logrus"
 )
 
 type TCPHandler struct {
-	natsClient *nats.NATSClient
+	natsClient  *nats.NATSClient
 	redisClient *redis.RedisClient
-	clients    map[string][]net.Conn
-	lock       sync.Mutex
+	clients     map[string][]net.Conn
+	lock        sync.Mutex
 }
 
 func NewTCPHandler(natsClient *nats.NATSClient, redisClient *redis.RedisClient) *TCPHandler {
 	return &TCPHandler{
-		natsClient: natsClient,
+		natsClient:  natsClient,
 		redisClient: redisClient,
-		clients:    make(map[string][]net.Conn),
+		clients:     make(map[string][]net.Conn),
 	}
 }
 
@@ -58,17 +59,7 @@ func (th *TCPHandler) handleConnection(conn net.Conn) {
 			logrus.Errorf("Error decoding message: %v", err)
 			return
 		}
-		th.lock.Lock()
-		th.clients[msg.Chatroom] = append(th.clients[msg.Chatroom], conn)
-		th.lock.Unlock()
-
-		logrus.Infof("Adding user %s to chatroom %s", msg.Username, msg.Chatroom)
-		if err := th.redisClient.AddUserToChatroom(msg.Chatroom, msg.Username); err != nil {
-			logrus.Errorf("Failed to add user to Redis: %v", err)
-		}
-
-		logrus.Infof("User %s joined chatroom %s", msg.Username, msg.Chatroom)
-		th.natsClient.PublishMessage("chatroom."+msg.Chatroom, string(scanner.Bytes()))
+		th.registerClient(conn, msg)
 	}
 
 	for scanner.Scan() {
@@ -76,23 +67,51 @@ func (th *TCPHandler) handleConnection(conn net.Conn) {
 			logrus.Errorf("Error decoding message: %v", err)
 			continue
 		}
-
-		if msg.Content == "#users" {
-			users, err := th.redisClient.GetUsersInChatroom(msg.Chatroom)
-			if err != nil {
-				logrus.Errorf("Error retrieving users from chatroom %s: %v", msg.Chatroom, err)
-				conn.Write([]byte("Error retrieving users\n"))
-				continue
-			}
-			userList := fmt.Sprintf("Users in chatroom %s: %v", msg.Chatroom, users)
-			logrus.Infof("Sending user list to %s: %s", msg.Username, userList)
-			conn.Write([]byte(userList + "\n"))
-		} else {
-			logrus.Infof("Received message from %s: %s", msg.Username, msg.Content)
-			th.natsClient.PublishMessage("chatroom."+msg.Chatroom, string(scanner.Bytes()))
-		}
+		th.processMessage(conn, msg)
 	}
 	conn.Close()
+}
+
+func (th *TCPHandler) registerClient(conn net.Conn, msg domain.Message) {
+	th.lock.Lock()
+	defer th.lock.Unlock()
+	th.clients[msg.Chatroom] = append(th.clients[msg.Chatroom], conn)
+	th.redisClient.AddUserToChatroom(msg.Chatroom, msg.Username)
+	th.redisClient.AddChatroom(msg.Chatroom)
+	logrus.Infof("User %s joined chatroom %s", msg.Username, msg.Chatroom)
+	th.natsClient.PublishMessage("chatroom."+msg.Chatroom, msg.Content)
+}
+
+func (th *TCPHandler) processMessage(conn net.Conn, msg domain.Message) {
+	switch msg.Content {
+	case "#users":
+		th.sendUserList(conn, msg)
+	case "#rooms":
+		th.sendRoomList(conn, msg)
+	default:
+		logrus.Infof("Received message from %s: %s", msg.Username, msg.Content)
+		th.natsClient.PublishMessage("chatroom."+msg.Chatroom, string(encodeMessage(msg)))
+	}
+}
+
+func (th *TCPHandler) sendUserList(conn net.Conn, msg domain.Message) {
+	users, err := th.redisClient.GetUsersInChatroom(msg.Chatroom)
+	if err != nil {
+		conn.Write([]byte("Error retrieving users\n"))
+		return
+	}
+	response := fmt.Sprintf("Users in chatroom %s: %v", msg.Chatroom, users)
+	conn.Write([]byte(response + "\n"))
+}
+
+func (th *TCPHandler) sendRoomList(conn net.Conn, msg domain.Message) {
+	chatrooms, err := th.redisClient.GetChatrooms()
+	if err != nil {
+		conn.Write([]byte("Error retrieving chatrooms\n"))
+		return
+	}
+	response := fmt.Sprintf("Active chatrooms: %v", chatrooms)
+	conn.Write([]byte(response + "\n"))
 }
 
 func (th *TCPHandler) subscribeToNATS() {
@@ -110,4 +129,9 @@ func (th *TCPHandler) subscribeToNATS() {
 			logrus.Infof("Broadcasting message to chatroom %s: %s", incomingMsg.Chatroom, incomingMsg.Content)
 		}
 	})
+}
+
+func encodeMessage(msg domain.Message) []byte {
+	data, _ := json.Marshal(msg)
+	return data
 }
