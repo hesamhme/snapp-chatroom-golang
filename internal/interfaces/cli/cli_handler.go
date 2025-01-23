@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"strings"
 )
 
 type UserInput struct {
@@ -99,13 +98,15 @@ func listenForMessages(conn net.Conn) {
 	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {
 		msg := scanner.Text()
-		if strings.HasPrefix(msg, "Users in chatroom") || strings.HasPrefix(msg, "Active chatrooms") {
-			fmt.Println(msg)
-		} else {
-			var chatMsg domain.Message
-			if err := json.Unmarshal([]byte(msg), &chatMsg); err == nil {
+		var chatMsg domain.Message
+		if err := json.Unmarshal([]byte(msg), &chatMsg); err == nil {
+			if chatMsg.Type == domain.SystemMessageType {
+				fmt.Printf("[SYSTEM] %s\n", chatMsg.Content)
+			} else {
 				fmt.Printf("[%s] %s: %s\n", chatMsg.Chatroom, chatMsg.Username, chatMsg.Content)
 			}
+		} else {
+			fmt.Println("Received:", msg)
 		}
 	}
 }

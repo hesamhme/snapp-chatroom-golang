@@ -19,3 +19,60 @@
 {"level":"info","msg":"Broadcasting message to chatroom x: hi hesam","time":"2025-01-21T02:29:29+03:30"}
 {"level":"info","msg":"Received message from hesam: hi ali","time":"2025-01-21T02:29:35+03:30"}
 {"level":"info","msg":"Broadcasting message to chatroom x: hi ali","time":"2025-01-21T02:29:35+03:30"}
+{"level":"info","msg":"Logger initialized successfully","time":"2025-01-23T22:17:24+03:30"}
+{"level":"info","msg":"Chat server starting...","time":"2025-01-23T22:17:24+03:30"}
+{"level":"info","msg":"TCP handler started on port 8080","time":"2025-01-23T22:17:24+03:30"}
+{"level":"info","msg":"Logger initialized successfully","time":"2025-01-23T22:17:29+03:30"}
+{"level":"info","msg":"Chat client starting...","time":"2025-01-23T22:17:29+03:30"}
+{"level":"info","msg":"New client connected: 127.0.0.1:40328","time":"2025-01-23T22:17:29+03:30"}
+{"level":"info","msg":"Logger initialized successfully","time":"2025-01-23T22:17:39+03:30"}
+{"level":"info","msg":"Chat client starting...","time":"2025-01-23T22:17:39+03:30"}
+{"level":"info","msg":"New client connected: 127.0.0.1:56368","time":"2025-01-23T22:17:39+03:30"}
+{"level":"info","msg":"Logger initialized successfully","time":"2025-01-23T22:22:50+03:30"}
+{"level":"info","msg":"Chat server starting...","time":"2025-01-23T22:22:50+03:30"}
+{"level":"info","msg":"TCP handler started on port 8080","time":"2025-01-23T22:22:50+03:30"}
+{"level":"info","msg":"Logger initialized successfully","time":"2025-01-23T22:23:03+03:30"}
+{"level":"info","msg":"Chat client starting...","time":"2025-01-23T22:23:03+03:30"}
+{"level":"info","msg":"New client connected: 127.0.0.1:47994","time":"2025-01-23T22:23:03+03:30"}
+{"level":"info","msg":"Logger initialized successfully","time":"2025-01-23T22:25:58+03:30"}
+{"level":"info","msg":"Chat server starting...","time":"2025-01-23T22:25:58+03:30"}
+{"level":"info","msg":"TCP handler started on port 8080","time":"2025-01-23T22:25:58+03:30"}
+{"level":"info","msg":"Logger initialized successfully","time":"2025-01-23T22:26:08+03:30"}
+{"level":"info","msg":"Chat client starting...","time":"2025-01-23T22:26:08+03:30"}
+{"level":"info","msg":"New client connected: 127.0.0.1:42678","time":"2025-01-23T22:26:08+03:30"}
+{"level":"info","msg":"Logger initialized successfully","time":"2025-01-23T22:27:28+03:30"}
+{"level":"info","msg":"Chat client starting...","time":"2025-01-23T22:27:28+03:30"}
+{"level":"info","msg":"New client connected: 127.0.0.1:59958","time":"2025-01-23T22:27:28+03:30"}
+{"level":"info","msg":"Logger initialized successfully","time":"2025-01-24T01:06:09+03:30"}
+{"level":"info","msg":"Chat server starting...","time":"2025-01-24T01:06:09+03:30"}
+{"level":"info","msg":"TCP handler started on port 8080","time":"2025-01-24T01:06:09+03:30"}
+{"level":"info","msg":"Logger initialized successfully","time":"2025-01-24T01:06:14+03:30"}
+{"level":"info","msg":"Chat client starting...","time":"2025-01-24T01:06:14+03:30"}
+{"level":"info","msg":"New client connected: 127.0.0.1:38346","time":"2025-01-24T01:06:14+03:30"}
+{"level":"info","msg":"Broadcasted message in chatroom x: hesam has joined the chatroom","time":"2025-01-24T01:06:17+03:30"}
+{"level":"info","msg":"Broadcasted message in chatroom x: hesam is here on x","time":"2025-01-24T01:06:24+03:30"}
+{"level":"info","msg":"Logger initialized successfully","time":"2025-01-24T01:06:29+03:30"}
+{"level":"info","msg":"Chat client starting...","time":"2025-01-24T01:06:29+03:30"}
+{"level":"info","msg":"New client connected: 127.0.0.1:54774","time":"2025-01-24T01:06:29+03:30"}
+{"level":"info","msg":"Broadcasted message in chatroom x: ali has joined the chatroom","time":"2025-01-24T01:06:32+03:30"}
+{"level":"info","msg":"Broadcasted message in chatroom x: hi ","time":"2025-01-24T01:06:35+03:30"}
+{"level":"info","msg":"Broadcasted message in chatroom x: hi hesam","time":"2025-01-24T01:06:44+03:30"}
+{"level":"info","msg":"Broadcasted message in chatroom x: hi ali","time":"2025-01-24T01:07:00+03:30"}
+{"level":"info","msg":"Logger initialized successfully","time":"2025-01-24T01:08:08+03:30"}
+{"level":"info","msg":"Chat client starting...","time":"2025-01-24T01:08:08+03:30"}
+{"level":"info","msg":"New client connected: 127.0.0.1:43842","time":"2025-01-24T01:08:08+03:30"}
+{"level":"info","msg":"Broadcasted message in chatroom x: neda has joined the chatroom","time":"2025-01-24T01:08:14+03:30"}
+{"level":"info","msg":"Broadcasted message in chatroom x: hi every body","time":"2025-01-24T01:08:22+03:30"}
+{"level":"info","msg":"Broadcasted message in chatroom x: i go","time":"2025-01-24T01:08:39+03:30"}
+{"level":"info","msg":"Broadcasted message in chatroom x: by","time":"2025-01-24T01:08:41+03:30"}
+{"level":"info","msg":"User neda left chatroom x","time":"2025-01-24T01:08:47+03:30"}
+{"level":"error","msg":"Error sending message to client: write tcp 127.0.0.1:8080-\u003e127.0.0.1:43842: use of closed network connection","time":"2025-01-24T01:08:47+03:30"}
+{"level":"info","msg":"Broadcasted message in chatroom x: neda has left the chatroom","time":"2025-01-24T01:08:47+03:30"}
+{"level":"info","msg":"Logger initialized successfully","time":"2025-01-24T01:09:03+03:30"}
+{"level":"info","msg":"Chat client starting...","time":"2025-01-24T01:09:03+03:30"}
+{"level":"info","msg":"New client connected: 127.0.0.1:42590","time":"2025-01-24T01:09:03+03:30"}
+{"level":"info","msg":"Broadcasted message in chatroom y: neda has joined the chatroom","time":"2025-01-24T01:09:08+03:30"}
+{"level":"info","msg":"Broadcasted message in chatroom y: this is my room ","time":"2025-01-24T01:09:13+03:30"}
+{"level":"info","msg":"User neda left chatroom y","time":"2025-01-24T01:09:28+03:30"}
+{"level":"error","msg":"Error sending message to client: write tcp 127.0.0.1:8080-\u003e127.0.0.1:42590: use of closed network connection","time":"2025-01-24T01:09:28+03:30"}
+{"level":"info","msg":"Broadcasted message in chatroom y: neda has left the chatroom","time":"2025-01-24T01:09:28+03:30"}

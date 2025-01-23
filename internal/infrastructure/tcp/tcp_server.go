@@ -26,24 +26,27 @@ func NewTCPHandler(useCase *application.ChatroomUseCase) *TCPHandler {
 }
 
 func (th *TCPHandler) Start(port string) {
-	listener, err := net.Listen("tcp", ":"+port)
-	if err != nil {
-		logrus.Fatalf("Error starting TCP handler: %v", err)
-	}
-	defer listener.Close()
+    listener, err := net.Listen("tcp", ":"+port)
+    if err != nil {
+        logrus.Fatalf("Error starting TCP handler: %v", err)
+    }
+    defer listener.Close()
 
-	logrus.Infof("TCP handler started on port %s", port)
+    logrus.Infof("TCP handler started on port %s", port)
 
-	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			logrus.Errorf("Error accepting connection: %v", err)
-			continue
-		}
-		logrus.Infof("New client connected: %s", conn.RemoteAddr())
-		go th.handleConnection(conn)
-	}
+    go th.subscribeToNATS()
+
+    for {
+        conn, err := listener.Accept()
+        if err != nil {
+            logrus.Errorf("Error accepting connection: %v", err)
+            continue
+        }
+        logrus.Infof("New client connected: %s", conn.RemoteAddr())
+        go th.handleConnection(conn)
+    }
 }
+
 
 func (th *TCPHandler) handleConnection(conn net.Conn) {
 	scanner := bufio.NewScanner(conn)
@@ -74,15 +77,55 @@ func (th *TCPHandler) registerClient(conn net.Conn, msg domain.Message) {
 	th.useCase.JoinChatroom(msg.Username, msg.Chatroom)
 }
 
-func (th *TCPHandler) processMessage(conn net.Conn, msg domain.Message) {
-	switch msg.Content {
-	case "#users":
-		users, _ := th.useCase.GetUsers(msg.Chatroom)
-		conn.Write([]byte(fmt.Sprintf("Users in chatroom %s: %v\n", msg.Chatroom, users)))
-	case "#rooms":
-		rooms, _ := th.useCase.GetChatrooms()
-		conn.Write([]byte(fmt.Sprintf("Active chatrooms: %v\n", rooms)))
-	default:
-		th.useCase.SendMessage(msg.Username, msg.Chatroom, msg.Content)
-	}
+func (th *TCPHandler) handleUserExit(conn net.Conn, msg domain.Message) {
+    th.lock.Lock()
+    defer th.lock.Unlock()
+
+    if err := th.useCase.LeaveChatroom(msg.Username, msg.Chatroom); err != nil {
+        logrus.Errorf("Error leaving chatroom: %v", err)
+        return
+    }
+
+    exitMessage := fmt.Sprintf("%s has left the chatroom", msg.Username)
+    for _, clientConn := range th.clients[msg.Chatroom] {
+        clientConn.Write([]byte(exitMessage + "\n"))
+    }
+    logrus.Infof("User %s left chatroom %s", msg.Username, msg.Chatroom)
 }
+
+
+func (th *TCPHandler) processMessage(conn net.Conn, msg domain.Message) {
+    switch msg.Content {
+    case "#users":
+        users, _ := th.useCase.GetUsers(msg.Chatroom)
+        conn.Write([]byte(fmt.Sprintf("Users in chatroom %s: %v\n", msg.Chatroom, users)))
+    case "#rooms":
+        rooms, _ := th.useCase.GetChatrooms()
+        conn.Write([]byte(fmt.Sprintf("Active chatrooms: %v\n", rooms)))
+    case "has left the chatroom":
+        th.handleUserExit(conn, msg)
+    default:
+        // Process chat message
+        th.useCase.SendMessage(msg.Username, msg.Chatroom, msg.Content)
+    }
+}
+
+
+func (th *TCPHandler) subscribeToNATS() {
+    go func() {
+        th.useCase.SubscribeToMessages(func(msg domain.Message) {
+            th.lock.Lock()
+            defer th.lock.Unlock()
+            
+            messageContent := fmt.Sprintf("[%s] %s: %s", msg.Chatroom, msg.Username, msg.Content)
+            for _, conn := range th.clients[msg.Chatroom] {
+                _, err := conn.Write([]byte(messageContent + "\n"))
+                if err != nil {
+                    logrus.Errorf("Error sending message to client: %v", err)
+                }
+            }
+            logrus.Infof("Broadcasted message in chatroom %s: %s", msg.Chatroom, msg.Content)
+        })
+    }()
+}
+

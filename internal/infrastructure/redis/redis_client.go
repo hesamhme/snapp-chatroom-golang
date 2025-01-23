@@ -61,3 +61,14 @@ func (r *RedisClient) GetChatrooms() ([]string, error) {
 func (r *RedisClient) RemoveChatroom(chatroom string) error {
     return r.client.SRem(ctx, "active_chatrooms", chatroom).Err()
 }
+
+func (r *RedisClient) ClearChatrooms() error {
+    keys, err := r.client.Keys(ctx, "chatroom:*").Result()
+    if err != nil {
+        return err
+    }
+    for _, key := range keys {
+        r.client.Del(ctx, key)
+    }
+    return nil
+}

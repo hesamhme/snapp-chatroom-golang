@@ -17,8 +17,13 @@ func main() {
 	natsClient, _ := nats.NewNATSConnection("nats://localhost:4222")
 	redisClient := redis.NewRedisClient()
 
+    if err := redisClient.ClearChatrooms(); err != nil {
+        logrus.Errorf("Failed to clear chatrooms: %v", err)
+    }
+
 	chatroomUseCase := application.NewChatroomUseCase(natsClient, redisClient)
 
 	tcpHandler := tcp.NewTCPHandler(chatroomUseCase)
 	tcpHandler.Start("8080")
 }
+

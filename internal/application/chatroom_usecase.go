@@ -6,6 +6,8 @@ import (
 	"appchat/internal/infrastructure/redis"
 	"encoding/json"
 	"fmt"
+
+	"github.com/sirupsen/logrus"
 )
 
 type ChatroomUseCase struct {
@@ -31,6 +33,7 @@ func (c *ChatroomUseCase) JoinChatroom(username, chatroom string) error {
 	}
 
 	message := domain.Message{
+		Type:     domain.SystemMessageType,
 		Username: username,
 		Chatroom: chatroom,
 		Content:  fmt.Sprintf("%s has joined the chatroom", username),
@@ -82,4 +85,15 @@ func (c *ChatroomUseCase) SendMessage(username, chatroom, content string) error 
 func encodeMessage(msg domain.Message) []byte {
 	data, _ := json.Marshal(msg)
 	return data
+}
+
+func (c *ChatroomUseCase) SubscribeToMessages(handler func(msg domain.Message)) {
+	c.natsClient.Subscribe("chatroom.*", func(message string) {
+		var msg domain.Message
+		if err := json.Unmarshal([]byte(message), &msg); err == nil {
+			handler(msg)
+		} else {
+			logrus.Errorf("Failed to unmarshal NATS message: %v", err)
+		}
+	})
 }

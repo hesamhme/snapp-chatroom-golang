@@ -7,6 +7,7 @@ const (
     ChatMessageType  MessageType = "chat"
     CommandMessageType MessageType = "command"
     ResponseMessageType MessageType = "response"
+    SystemMessageType MessageType = "system"
 )
 
 
