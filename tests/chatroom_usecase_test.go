@@ -93,3 +93,39 @@ func TestJoinChatroom(t *testing.T) {
 
 	assert.Equal(t, string(expectedJSON), actualJSON, "Expected output does not match")
 }
+
+
+// Test function for leaving a chatroom
+func TestLeaveChatroom(t *testing.T) {
+	// Arrange: Set up mock dependencies
+	mockRedis := &MockRedisClient{users: make(map[string][]string)}
+	mockNats := &MockNATSClient{}
+
+	chatroomUseCase := application.NewChatroomUseCase(mockNats, mockRedis)
+
+	// Test data
+	username := "test_user"
+	chatroom := "x"
+
+	// Add user to the chatroom first
+	_ = mockRedis.AddUserToChatroom(chatroom, username)
+
+	// Act: Call LeaveChatroom method
+	err := chatroomUseCase.LeaveChatroom(username, chatroom)
+
+	// Assert: Ensure no error when leaving the chatroom
+	assert.NoError(t, err, "Expected no error when leaving chatroom")
+
+	expectedMessage := domain.Message{
+		Username: "server",
+		Chatroom: chatroom,
+		Content:  "test_user has left the chatroom",
+	}
+
+	// Convert expected message to JSON string for comparison
+	expectedJSON, _ := json.Marshal(expectedMessage)
+	actualJSON := mockNats.PublishedMessages[0]
+
+	assert.Equal(t, string(expectedJSON), actualJSON, "Expected output does not match")
+}
+
