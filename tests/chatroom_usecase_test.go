@@ -129,3 +129,55 @@ func TestLeaveChatroom(t *testing.T) {
 	assert.Equal(t, string(expectedJSON), actualJSON, "Expected output does not match")
 }
 
+// Test function for two users communicating in the same chatroom
+func TestChatroomMessaging(t *testing.T) {
+	// Arrange: Set up mock dependencies
+	mockRedis := &MockRedisClient{users: make(map[string][]string)}
+	mockNats := &MockNATSClient{}
+
+	chatroomUseCase := application.NewChatroomUseCase(mockNats, mockRedis)
+
+	// Test data
+	username1 := "user_test_1"
+	username2 := "user_test_2"
+	chatroom := "test"
+
+	// Act: Both users join the chatroom
+	err := chatroomUseCase.JoinChatroom(username1, chatroom)
+	assert.NoError(t, err, "Expected no error when user 1 joins chatroom")
+
+	err = chatroomUseCase.JoinChatroom(username2, chatroom)
+	assert.NoError(t, err, "Expected no error when user 2 joins chatroom")
+
+	// User 1 sends a message
+	msg1Content := "hi from test one"
+	err = chatroomUseCase.SendMessage(username1, chatroom, msg1Content)
+	assert.NoError(t, err, "Expected no error when user 1 sends message")
+
+	// User 2 sends a message
+	msg2Content := "hi from test two"
+	err = chatroomUseCase.SendMessage(username2, chatroom, msg2Content)
+	assert.NoError(t, err, "Expected no error when user 2 sends message")
+
+	// Assert: Validate the messages received by both users
+	expectedMessages := []domain.Message{
+		{
+			Username: username1,
+			Chatroom: chatroom,
+			Content:  msg1Content,
+		},
+		{
+			Username: username2,
+			Chatroom: chatroom,
+			Content:  msg2Content,
+		},
+	}
+
+	// Convert expected messages to JSON strings for comparison
+	expectedJSON1, _ := json.Marshal(expectedMessages[0])
+	expectedJSON2, _ := json.Marshal(expectedMessages[1])
+
+	// Check if both messages are published to NATS
+	assert.Contains(t, mockNats.PublishedMessages, string(expectedJSON1), "Expected first message in NATS")
+	assert.Contains(t, mockNats.PublishedMessages, string(expectedJSON2), "Expected second message in NATS")
+}
