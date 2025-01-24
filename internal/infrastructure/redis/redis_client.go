@@ -11,6 +11,15 @@ import (
 
 var ctx = context.Background()
 
+type RedisClientInterface interface {
+    AddUserToChatroom(chatroom, username string) error
+    GetUsersInChatroom(chatroom string) ([]string, error)
+    RemoveUserFromChatroom(chatroom, username string) error
+    AddChatroom(chatroom string) error
+    GetChatrooms() ([]string, error)
+    RemoveChatroom(chatroom string) error
+}
+
 type RedisClient struct {
 	client *redis.Client
 }
