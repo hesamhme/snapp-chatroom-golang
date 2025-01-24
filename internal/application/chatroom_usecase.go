@@ -11,12 +11,12 @@ import (
 )
 
 type ChatroomUseCase struct {
-	natsClient  *nats.NATSClient
-	redisClient *redis.RedisClient
+	natsClient  nats.NATSClientInterface
+	redisClient redis.RedisClientInterface
 }
 
 // Factory function to create a new use case
-func NewChatroomUseCase(natsClient *nats.NATSClient, redisClient *redis.RedisClient) *ChatroomUseCase {
+func NewChatroomUseCase(natsClient nats.NATSClientInterface, redisClient redis.RedisClientInterface) *ChatroomUseCase {
 	return &ChatroomUseCase{
 		natsClient:  natsClient,
 		redisClient: redisClient,
