@@ -4,6 +4,13 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
+type NATSClientInterface interface {
+    PublishMessage(subject, message string) error
+    Subscribe(subject string, handler func(string))
+    Close()
+}
+
+
 type NATSClient struct {
 	conn *nats.Conn
 }
